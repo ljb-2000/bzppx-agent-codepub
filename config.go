@@ -3,11 +3,8 @@ package main
 import (
 	"flag"
 	"fmt"
-
 	"os"
-
 	"strings"
-
 	"github.com/fatih/color"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
@@ -18,13 +15,13 @@ var (
 )
 
 func initConfig() (err error) {
-	cfg.SetDefault("agentX.version", "1.0")
+	cfg.SetDefault("agent-code.version", "1.0")
 	pflag.CommandLine.AddGoFlagSet(flag.CommandLine)
 	//cli&default config
 	configFile := pflag.String("config", "", "config file path")
 	version := pflag.Bool("version", false, "show version")
 	if *version {
-		fmt.Printf("agentX v%s - https://github.com/snail007/agentX\n", cfg.GetString("agentX.version"))
+		fmt.Printf("agent-code v%s - https://github.com/bzppx/bzppx-codepub\n", cfg.GetString("agent-code.version"))
 		os.Exit(0)
 	}
 	pflag.String("rpc-listen", ":9091", "the api port to listen")
@@ -46,9 +43,9 @@ func initConfig() (err error) {
 		cfg.SetConfigFile(*configFile)
 	} else {
 		cfg.SetConfigName("config")
-		cfg.AddConfigPath("/etc/agentx/")
-		cfg.AddConfigPath("$HOME/.agentx")
-		cfg.AddConfigPath(".agentx")
+		cfg.AddConfigPath("/etc/agent-code/")
+		cfg.AddConfigPath("$HOME/.agent-code")
+		cfg.AddConfigPath(".agent-code")
 		cfg.AddConfigPath(".")
 	}
 	err = cfg.ReadInConfig()
@@ -58,13 +55,9 @@ func initConfig() (err error) {
 	} else if file != "" {
 		fmt.Printf("use config file : %s\n", file)
 	}
-	setInternalConfig()
 	return
 }
 
-func setInternalConfig() {
-
-}
 func poster() string {
 	fg := color.New(color.FgHiYellow).SprintFunc()
 	return fg(`
@@ -74,7 +67,7 @@ func poster() string {
 ██╔══██║    ██║   ██║    ██╔══╝      ██║╚██╗██║       ██║        ██╔██╗ 
 ██║  ██║    ╚██████╔╝    ███████╗    ██║ ╚████║       ██║       ██╔╝ ██╗
 ╚═╝  ╚═╝     ╚═════╝     ╚══════╝    ╚═╝  ╚═══╝       ╚═╝       ╚═╝  ╚═╝
-Author: snail
-Link  : https://github.com/snail007/agentX
+Author: bzppx
+Link  : https://github.com/bzppx/bzppx-codepub
 `)
 }

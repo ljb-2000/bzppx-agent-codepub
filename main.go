@@ -1,18 +1,16 @@
 package main
 
 import (
-	"agentX/plugins/gitx"
-	"agentX/plugins/systemx"
-	"net/http"
-
-	"fmt"
-
-	"github.com/julienschmidt/httprouter"
-
+	"net/rpc"
+	"bzppx-agent-code/service"
+	"crypto/tls"
 	"os"
+	"fmt"
 )
 
-func main() {
+// rpc server start
+
+func main()  {
 
 	fmt.Println(poster())
 	err := initConfig()
@@ -20,32 +18,56 @@ func main() {
 		fmt.Printf("%s", err)
 		os.Exit(0)
 	}
-
 	initLog()
-
-	registRpcService()
-
-	initRpcWeb()
-
-	log.Info("agentX service stared")
-
-	go func() {
-		http.ListenAndServe(":25900", http.StripPrefix("/", http.FileServer(http.Dir("./clients/js"))))
-	}()
-	select {}
-}
-func registRpcService() {
-	//注册plugins下面的rpc服务
-	services.register(new(gitx.Gitx), "git")
-	services.register(new(systemx.SystemX), "system")
+	rpcRegister()
+	rpcStartServer()
 }
 
-//init rpc web service
-func initRpcWeb() {
-	router := httprouter.New()
-	router.Handle("GET", "/:token", serve)
-	router.Handle("POST", "/:token", serve)
-	router.Handle("OPTIONS", "/:token", serve)
-	go http.ListenAndServe(cfg.GetString("rpc.listen"), router)
+// rpc register
+func rpcRegister()  {
+	for _, ser := range service.RegisterServices {
+		rpc.Register(ser)
+	}
+}
 
+// start rpc server
+func rpcStartServer()  {
+	cert, err := tls.LoadX509KeyPair("cert/server.pem", "cert/server.key")
+	if err != nil {
+		log.Error(err.Error())
+		os.Exit(1)
+	}
+
+	tlsConf := &tls.Config{
+		Certificates:[]tls.Certificate{cert},
+	}
+	listenTcp := cfg.GetString("rpc.listen")
+	ln, err := tls.Listen("tcp", listenTcp, tlsConf)
+	if err != nil {
+		log.Errorln(err.Error())
+		os.Exit(1)
+	}
+	defer ln.Close()
+
+	log.Info("start listen tcp port"+listenTcp)
+
+	token := cfg.GetString("access.token")
+	for {
+		c, err := ln.Accept()
+		buf := make([]byte, 1024)
+		n, err := c.Read(buf)
+		if err != nil {
+			log.Error(err.Error())
+			break
+		}
+		clientToken := string(buf[:n])
+		if clientToken != token {
+			c.Write([]byte("failed"))
+			continue
+		}else {
+			c.Write([]byte("success"))
+		}
+
+		go rpc.ServeConn(c)
+	}
 }

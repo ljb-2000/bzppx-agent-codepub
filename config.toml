@@ -1,3 +1,6 @@
+[access]
+token = "agent-code"
+
 [rpc]
 listen = ":9091"
 
